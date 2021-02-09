@@ -83,10 +83,7 @@ class HTTPClient(object):
                 done = not part
         return buffer.decode('utf-8')
 
-    # Implement basic HTTP GET
-    def GET(self, url, args=None):
-        code = 500
-        body = ""
+    def parse(self, url):
         # urllib.parse is OKAY for parsing URLs
         o = urllib.parse.urlparse(url)
         host, port = o.hostname, o.port
@@ -96,10 +93,18 @@ class HTTPClient(object):
                 port = 443
             else:
                 port = 80
-        # print("----GET url", url, host, port)
+        path = "/" if o.path == "" else o.path
+
+        return host, port, path
+
+    # Implement basic HTTP GET
+    def GET(self, url, args=None):
+        code = 500
+        body = ""
+        host, port, path = self.parse(url)
+        # print("----GET url", url, host, port, path)
         self.connect(host, port)
 
-        path = "/" if o.path == "" else o.path
         request = "GET {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n".format(
             path, host)
         self.sendall(request)
@@ -113,11 +118,10 @@ class HTTPClient(object):
     # Implement basic HTTP POST
     def POST(self, url, args=None):
         code = 500
-        o = urllib.parse.urlparse(url)
-        host, port = o.hostname, o.port
+        host, port, path = self.parse(url)
+
         self.connect(host, port)
 
-        path = "/" if o.path == "" else o.path
         # check body
         # HTTP POST can post vars
         body = ""
